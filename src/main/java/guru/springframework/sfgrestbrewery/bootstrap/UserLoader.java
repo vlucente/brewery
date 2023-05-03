@@ -23,7 +23,8 @@ public class UserLoader implements CommandLineRunner{
 
 	@Override
 	public void run(String... args) throws Exception {
-		loadUserObjects();	
+		System.out.println("Loading users....");
+		loadUserObjects();
 	}
 
 	private synchronized void loadUserObjects() {

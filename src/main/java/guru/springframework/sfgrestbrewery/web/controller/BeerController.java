@@ -1,5 +1,7 @@
 package guru.springframework.sfgrestbrewery.web.controller;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -7,6 +9,9 @@ import java.util.stream.StreamSupport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,7 +27,6 @@ import guru.springframework.sfgrestbrewery.domain.BeerStyleEnum;
 import guru.springframework.sfgrestbrewery.exception.BeerNotFoundException;
 import guru.springframework.sfgrestbrewery.services.BeerService;
 import lombok.extern.slf4j.Slf4j;
-
 @RequestMapping("/api/v1/")
 @RestController
 @ResponseBody
@@ -34,6 +38,7 @@ public class BeerController {
 	
 	@GetMapping(value = "beers")
 	public ResponseEntity<List<Beer>> getBeers(){
+		printUserInfo("/api/v1/beers");
 		log.info("Getting all beers from the Database");
 		final Iterable<Beer> beerIterable = beerService.getAllBeers();
 		final List<Beer> beers = StreamSupport
@@ -45,6 +50,7 @@ public class BeerController {
 	@GetMapping(value = "get-beer-from-id/{id}")
 	
 	public ResponseEntity<Beer> getBeerById(@PathVariable(name = "id") final Integer beerId){
+		printUserInfo("/api/v1/get-beer-from-id/"+beerId);
 		log.info("Getting beer with beerId {} from the Database.", beerId);
 		final Beer beer = beerService.getBeerById(beerId)
 				.orElseThrow(() -> new BeerNotFoundException
@@ -93,6 +99,18 @@ public class BeerController {
 		beerService.deleteBeerById(beerId);
 		log.info("Record with beerId {} has been deleted", beerId);
 		return new ResponseEntity<Void>(HttpStatus.OK);
+	}
+
+	private void printUserInfo(String endpoint){
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		String authorities = getAuthoritiesNames((Collection<GrantedAuthority>) authentication.getAuthorities());
+		log.info("called {} - request from {} with roles {}",endpoint,authentication.getName(), authorities);
+	}
+
+	private String getAuthoritiesNames(Collection<GrantedAuthority> authorities){
+		return Arrays.toString(authorities.stream()
+				.map(a -> a.getAuthority())
+				.collect(Collectors.toList()).toArray());
 	}
 
 }
